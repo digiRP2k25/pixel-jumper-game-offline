@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <!-- This viewport tag is essential for mobile responsiveness --><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Jumper</title>
+    <style>
+        /* Use Inter font for a clean, modern look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        /* Basic reset and styling for the page */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-grey background */
+            color: #333;
+            /* Center all content */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden; /* Prevent scrolling */
+            touch-action: manipulation; /* Disable double-tap to zoom */
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin: 5px 0 15px 0;
+            color: #555;
+            text-align: center;
+        }
+
+        /* Styling for the game canvas */
+        canvas {
+            background-color: #ffffff;
+            border: 2px solid #333;
+            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            
+            /* Responsive canvas: 
+              - It will be 95% of the viewport width, up to a max of 600px.
+              - The aspect-ratio keeps it at a 2:1 ratio (width:height).
+            */
+            width: 95vw;
+            max-width: 600px;
+            aspect-ratio: 2 / 1;
+            display: block;
+        }
+
+        /* Score display styling */
+        #score-container {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4a5568;
+            margin-top: 20px;
+        }
+        
+        #score {
+            font-weight: 700;
+            color: #2c5282;
+        }
+
+        /* Game over message styling */
+        #game-over-message {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 25px 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            z-index: 10;
+        }
+        
+        #game-over-message h2 {
+            margin: 0 0 10px 0;
+            color: #e53e3e; /* Red for 'Game Over' */
+        }
+
+        #game-over-message p {
+            margin: 0;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        /* High score display styling */
+        #high-score-container {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #4a5568;
+            text-align: center;
+        }
+
+        #high-score-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 5px 0 0 0;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        #high-score-list li {
+            font-weight: 700;
+            color: #555;
+            background-color: #e2e8f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            min-width: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Pixel Jumper</h1>
+    <p>Tap the screen (or press Space) to jump!</p>
+
+    <!-- The canvas element where the game is drawn --><canvas id="gameCanvas"></canvas>
+
+    <!-- Score display --><div id="score-container">
+        Score: <span id="score">0</span>
+    </div>
+
+    <!-- High Score Display --><div id="high-score-container">
+        <strong>Last 5 Scores:</strong>
+        <ul id="high-score-list">
+            <li>-</li>
+            <li>-</li>
+            <li>-</li>
+            <li>-</li>
+            <li>-</li>
+        </ul>
+    </div>
+
+    <!-- Game Over message box (hidden by default) --><div id="game-over-message">
+        <h2>Game Over!</h2>
+        <p>Tap anywhere to restart</p>
+    </div>
+
+    <script>
+        // --- 1. SETUP ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const highScoreList = document.getElementById('high-score-list'); // For high scores
+
+        // Set the internal drawing resolution of the canvas
+        canvas.width = 600;
+        canvas.height = 300;
+
+        // --- 2. GAME VARIABLES ---
+        let player, gravity, obstacles, gameSpeed, score, isGameOver, groundHeight, maxGameSpeed;
+        let lastFiveScores = []; // Store last 5 scores
+
+        // Player properties
+        const playerRadius = 15;
+        const playerColor = "#e53e3e"; // Red
+        const jumpStrength = 13;
+        
+        // Obstacle properties
+        const obstacleWidth = 20;
+        const obstacleHeight = 40;
+        
+        // --- Helper function to generate a color harmonious with the red player ---
+        function getRandomHarmoniousColor() {
+            // Player Color: Red (Hue ~ 0/360)
+            
+            // Define harmonious color ranges (HSL Hue values)
+            const ranges = [
+                // 1. Analogous (Warm: Red-Orange) - 0 to 40 degrees
+                { min: 0, max: 40 }, 
+                // 2. Analogous (Cool: Red-Violet/Magenta) - 300 to 340 degrees
+                { min: 300, max: 340 }, 
+                // 3. Complementary (Cool: Cyan/Teal) - 160 to 200 degrees
+                { min: 160, max: 200 } 
+            ];
+
+            // Pick a random range to ensure variety
+            const range = ranges[Math.floor(Math.random() * ranges.length)];
+            
+            // Generate hue within the selected range
+            let hue = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
+            
+            // Use high saturation and medium lightness for vibrancy/radiance
+            const saturation = Math.floor(Math.random() * (100 - 80 + 1)) + 80; // 80-100% saturation
+            const lightness = Math.floor(Math.random() * (60 - 45 + 1)) + 45; // 45-60% lightness
+            
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        // --- 3. GAME OBJECTS & DRAWING ---
+
+        // Player Object
+        function createPlayer() {
+            return {
+                x: 50, // Center of the circle
+                y: canvas.height - groundHeight - playerRadius, // Center of the circle
+                radius: playerRadius,
+                dy: 0, // dy is the 'delta y', or vertical velocity
+                isJumping: false,
+                grounded: true
+            };
+        }
+
+        function drawPlayer(player) {
+            ctx.beginPath();
+            
+            // Create a radial gradient for 3D effect
+            // (cx, cy, r_inner, cx, cy, r_outer)
+            let gradient = ctx.createRadialGradient(
+                player.x - player.radius / 3, // inner circle offset to left
+                player.y - player.radius / 3, // inner circle offset to top
+                player.radius / 10,     // inner circle radius (small)
+                player.x,               // outer circle center x
+                player.y,               // outer circle center y
+                player.radius           // outer circle radius
+            );
+            
+            // Add color stops (light red to dark red)
+            gradient.addColorStop(0, "#f87171"); // Lighter red (highlight)
+            gradient.addColorStop(0.8, playerColor); // Main red
+            gradient.addColorStop(1, "#991b1b"); // Darker red (shadow)
+
+            ctx.fillStyle = gradient;
+            
+            // (x, y, radius, startAngle, endAngle)
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updatePlayer(player) {
+            // Apply gravity
+            if (!player.grounded) {
+                player.dy += gravity;
+                player.y += player.dy;
+            }
+
+            // Check if player hits the ground
+            if (player.y + player.radius >= canvas.height - groundHeight) {
+                player.y = canvas.height - groundHeight - playerRadius;
+                player.dy = 0;
+                player.isJumping = false;
+                player.grounded = true;
+            }
+        }
+
+        function jump(player) {
+            // Only allow jumping if on the ground
+            if (player.grounded) {
+                player.dy = -jumpStrength;
+                player.grounded = false;
+                player.isJumping = true;
+            }
+        }
+
+        // Ground
+        function drawGround() {
+            ctx.fillStyle = "#555";
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
+        }
+
+        // --- 3.5 HIGH SCORE DISPLAY ---
+        function updateHighScoreDisplay() {
+            const listItems = highScoreList.getElementsByTagName('li');
+            for (let i = 0; i < listItems.length; i++) {
+                if (lastFiveScores[i] !== undefined) {
+                    listItems[i].textContent = lastFiveScores[i];
+                } else {
+                    listItems[i].textContent = '-';
+                }
+            }
+        }
+        
+        // --- 4. OBSTACLES & MECHANICS ---
+
+        function spawnObstacle() {
+            // Use the new harmonious color generator
+            const obstacleMainColor = getRandomHarmoniousColor();
+            const newObstacle = {
+                x: canvas.width,
+                y: canvas.height - groundHeight - obstacleHeight,
+                width: obstacleWidth,
+                height: obstacleHeight,
+                color: obstacleMainColor // Store the generated color with the obstacle
+            };
+            obstacles.push(newObstacle);
+        }
+
+        function updateObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                let obs = obstacles[i];
+                obs.x -= gameSpeed;
+
+                // Draw the obstacle with a radiant effect
+                ctx.beginPath();
+                // Create a linear gradient for a radiant effect top-to-bottom
+                let gradient = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.height);
+                
+                // Parse the HSL color to create lighter/darker shades
+                const [hue, saturation, lightness] = obs.color.match(/\d+/g).map(Number);
+                
+                // Add stops for the radiant effect, ensuring they don't exceed 100 or fall below 0
+                gradient.addColorStop(0, `hsl(${hue}, ${saturation}%, ${Math.min(100, lightness + 15)}%)`); // Lighter at the top
+                gradient.addColorStop(0.5, obs.color); // Main color in the middle
+                gradient.addColorStop(1, `hsl(${hue}, ${saturation}%, ${Math.max(0, lightness - 15)}%)`); // Darker at the bottom
+
+                ctx.fillStyle = gradient;
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.closePath();
+
+                // Check for collision
+                if (checkCollision(player, obs)) {
+                    isGameOver = true;
+                    gameOverMessage.style.display = 'block';
+
+                    // Add score to list and update display
+                    lastFiveScores.unshift(score); // Add to the beginning
+                    if (lastFiveScores.length > 5) {
+                        lastFiveScores.pop(); // Remove the oldest score
+                    }
+                    updateHighScoreDisplay();
+                }
+
+                // Remove obstacle if it's off-screen
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollision(player, obstacle) {
+            // Find the closest point on the obstacle (a rect) to the center of the player (a circle)
+            let testX = player.x;
+            let testY = player.y;
+
+            // Find the closest x-coordinate on the box
+            if (player.x < obstacle.x) {
+                testX = obstacle.x; // player is to the left of the box
+            } else if (player.x > obstacle.x + obstacle.width) {
+                testX = obstacle.x + obstacle.width; // player is to the right of the box
+            }
+            // if player.x is within the box's x range, testX remains player.x
+
+            // Find the closest y-coordinate on the box
+            if (player.y < obstacle.y) {
+                testY = obstacle.y; // player is above the box
+            } else if (player.y > obstacle.y + obstacle.height) {
+                testY = obstacle.y + obstacle.height; // player is below the box
+            }
+            // if player.y is within the box's y range, testY remains player.y
+            
+            // Calculate the distance from the circle's center to this closest point
+            const distX = player.x - testX;
+            const distY = player.y - testY;
+            const distance = Math.sqrt((distX * distX) + (distY * distY));
+
+            // If the distance is less than the circle's radius, there's a collision
+            return distance <= player.radius;
+        }
+
+        // --- 5. GAME INITIALIZATION & LOOP ---
+        let obstacleTimer = 0;
+        let obstacleSpawnInterval = 100; // Initial spawn interval
+
+        function resetGame() {
+            groundHeight = 20;
+            player = createPlayer();
+            gravity = 0.8;
+            obstacles = [];
+            gameSpeed = 5;
+            maxGameSpeed = 10; // Set the maximum speed
+            score = 0;
+            isGameOver = false;
+            obstacleTimer = 0;
+            obstacleSpawnInterval = 100;
+            
+            scoreElement.textContent = '0';
+            gameOverMessage.style.display = 'none';
+
+            updateHighScoreDisplay(); // Update score display on reset
+
+            // Start the game loop
+            gameLoop();
+        }
+
+        function gameLoop() {
+            // If game is over, stop the loop
+            if (isGameOver) {
+                return;
+            }
+
+            // Clear the canvas for the new frame
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw the ground
+            drawGround();
+
+            // Update and draw the player
+            updatePlayer(player);
+            drawPlayer(player);
+
+            // Handle obstacles
+            obstacleTimer++;
+            if (obstacleTimer >= obstacleSpawnInterval) {
+                spawnObstacle();
+                obstacleTimer = 0;
+                // Randomize next spawn time to make it challenging
+                obstacleSpawnInterval = Math.floor(Math.random() * (120 - 70 + 1)) + 70;
+                // Gradually increase speed up to the max
+                if (gameSpeed < maxGameSpeed) {
+                    gameSpeed += 0.1;
+                }
+            }
+            updateObstacles();
+
+            // Update score
+            score++;
+            scoreElement.textContent = score;
+
+            // Request the next frame
+            requestAnimationFrame(gameLoop);
+        }
+
+        // --- 6. EVENT LISTENERS ---
+
+        function handleInput() {
+            if (isGameOver) {
+                resetGame();
+            } else {
+                jump(player);
+            }
+        }
+
+        // Listen for keyboard input (Space bar)
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault(); // Prevent page from scrolling
+                handleInput();
+            }
+        });
+
+        // Listen for touch input (for mobile)
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault(); // Prevent screen from scrolling or zooming
+            handleInput();
+        });
+        
+        // Listen for mouse click (for desktop)
+        window.addEventListener('mousedown', () => {
+            handleInput();
+        });
+
+        // --- 7. START THE GAME ---
+        resetGame();
+
+    </script>
+</body>
+</html>
