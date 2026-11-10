@@ -1,471 +1,624 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <!-- This viewport tag is essential for mobile responsiveness --><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Jumper</title>
-    <style>
-        /* Use Inter font for a clean, modern look */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-
-        /* Basic reset and styling for the page */
-        html, body {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Light blue-grey background */
-            color: #333;
-            /* Center all content */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden; /* Prevent scrolling */
-            touch-action: manipulation; /* Disable double-tap to zoom */
-        }
-
-        h1 {
-            color: #2c3e50;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-
-        p {
-            margin: 5px 0 15px 0;
-            color: #555;
-            text-align: center;
-        }
-
-        /* Styling for the game canvas */
-        canvas {
-            background-color: #ffffff;
-            border: 2px solid #333;
-            border-radius: 8px; /* Rounded corners */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            
-            /* Responsive canvas: 
-              - It will be 95% of the viewport width, up to a max of 600px.
-              - The aspect-ratio keeps it at a 2:1 ratio (width:height).
-            */
-            width: 95vw;
-            max-width: 600px;
-            aspect-ratio: 2 / 1;
-            display: block;
-        }
-
-        /* Score display styling */
-        #score-container {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #4a5568;
-            margin-top: 20px;
-        }
-        
-        #score {
-            font-weight: 700;
-            color: #2c5282;
-        }
-
-        /* Game over message styling */
-        #game-over-message {
-            display: none; /* Hidden by default */
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: rgba(255, 255, 255, 0.9);
-            padding: 25px 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            text-align: center;
-            z-index: 10;
-        }
-        
-        #game-over-message h2 {
-            margin: 0 0 10px 0;
-            color: #e53e3e; /* Red for 'Game Over' */
-        }
-
-        #game-over-message p {
-            margin: 0;
-            font-size: 1rem;
-            color: #333;
-        }
-
-        /* High score display styling */
-        #high-score-container {
-            margin-top: 20px;
-            font-size: 1rem;
-            color: #4a5568;
-            text-align: center;
-        }
-
-        #high-score-list {
-            list-style-type: none;
-            padding: 0;
-            margin: 5px 0 0 0;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-        }
-
-        #high-score-list li {
-            font-weight: 700;
-            color: #555;
-            background-color: #e2e8f0;
-            padding: 5px 10px;
-            border-radius: 5px;
-            min-width: 30px;
-            text-align: center;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#bfe0ff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pixel Jumper</title>
+<meta name="author" content="Raja Prabu">
+<meta name="description" content="Pixel Jumper - a lightweight endless-runner game. Works offline, full screen on mobile, single HTML file.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%23e53e3e'/%3E%3Ccircle cx='11' cy='11' r='4' fill='%23f87171'/%3E%3C/svg%3E">
+<!--
+  Pixel Jumper v1.4 — full-screen mobile edition.
+  Made by Raja Prabu (github.com/digiRP2k25). MIT License.
+  Fully offline, single file, no external assets. Open it in any modern browser.
+  The game fills the whole screen in any orientation (best in landscape).
+-->
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:#bfe0ff;overflow:hidden;overscroll-behavior:none}
+  body{
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    touch-action:none;user-select:none;-webkit-user-select:none;
+    -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;
+  }
+  canvas{position:fixed;left:0;top:0;display:block;touch-action:none}
+  .btns{position:fixed;display:flex;gap:8px;z-index:2;
+    top:calc(10px + env(safe-area-inset-top));right:calc(10px + env(safe-area-inset-right))}
+  .btns button{width:44px;height:44px;border:0;border-radius:10px;background:rgba(0,0,0,.28);color:#fff;
+    font-size:17px;cursor:pointer;line-height:1;padding:0;touch-action:manipulation}
+  .btns button:focus-visible{outline:2px solid #fff}
+  .btns button[hidden]{display:none}
+  #safe{position:fixed;visibility:hidden;pointer-events:none;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+</style>
 </head>
 <body>
+  <canvas id="game" aria-label="Pixel Jumper game"></canvas>
+  <div class="btns">
+    <button id="fsBtn" title="Full screen" aria-label="Full screen" hidden>&#x26F6;</button>
+    <button id="pauseBtn" title="Pause (P)" aria-label="Pause">&#10074;&#10074;</button>
+    <button id="muteBtn" title="Mute (M)" aria-label="Mute">&#9835;</button>
+  </div>
+  <div id="safe"></div>
 
-    <h1>Pixel Jumper</h1>
-    <p>Tap the screen (or press Space) to jump!</p>
+<script>
+(() => {
+'use strict';
 
-    <!-- The canvas element where the game is drawn --><canvas id="gameCanvas"></canvas>
+// ---------- 1. SETUP & FULL-SCREEN LAYOUT ----------
+// The gameplay band is always 300 units tall (ground at 280).
+// Its width W follows the screen shape; on tall/portrait screens extra sky is shown above.
+const H = 300, GROUND = 20, GY = H - GROUND;
+const MIN_W = 560;
+let W = 600, VH = 300, OFFY = 0, K = 1, UNIT = 1, PX = 60;
+let inset = { t: 0, r: 0, b: 0, l: 0 };   // phone notch / rounded corners, in world units
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const pauseBtn = document.getElementById('pauseBtn');
+const muteBtn = document.getElementById('muteBtn');
+const fsBtn = document.getElementById('fsBtn');
+const safeEl = document.getElementById('safe');
+const isTouch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
 
-    <!-- Score display --><div id="score-container">
-        Score: <span id="score">0</span>
-    </div>
+function fit() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  if (!vw || !vh) return;
+  const aspect = vw / vh;
+  const oldW = W;
+  W = Math.max(Math.round(H * aspect), MIN_W);
+  VH = W / aspect;
+  OFFY = (VH - H) * 0.6;                  // in portrait, place the action a bit below the middle
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
+  canvas.style.width = vw + 'px'; canvas.style.height = vh + 'px';
+  K = canvas.width / W;                   // device pixels per world unit
+  UNIT = VH / vh;                         // world units per CSS pixel
+  const cs = getComputedStyle(safeEl);
+  inset = { t: parseFloat(cs.paddingTop) * UNIT || 0, r: parseFloat(cs.paddingRight) * UNIT || 0,
+            b: parseFloat(cs.paddingBottom) * UNIT || 0, l: parseFloat(cs.paddingLeft) * UNIT || 0 };
+  PX = 60 + inset.l;
+  if (typeof player !== 'undefined' && player) player.x = PX;
+  stars = Array.from({ length: Math.round(40 * VH / H) }, () => ({ x: rand(0, W), y: rand(-OFFY, GY - 70), r: rand(0.6, 1.6) }));
+  // Rotating or resizing mid-run pauses the game so you don't crash while the screen changes
+  if (state === 'playing' && Math.abs(W - oldW) > 2) setPaused(true);
+}
 
-    <!-- High Score Display --><div id="high-score-container">
-        <strong>Last 5 Scores:</strong>
-        <ul id="high-score-list">
-            <li>-</li>
-            <li>-</li>
-            <li>-</li>
-            <li>-</li>
-            <li>-</li>
-        </ul>
-    </div>
+// ---------- 2. SAVED DATA (works offline; silently skipped if blocked) ----------
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+let best = Number(store.get('pj_best', 0)) || 0;
+let last5 = store.get('pj_last5', []);
+if (!Array.isArray(last5)) last5 = [];
+let muted = !!store.get('pj_muted', false);
 
-    <!-- Game Over message box (hidden by default) --><div id="game-over-message">
-        <h2>Game Over!</h2>
-        <p>Tap anywhere to restart</p>
-    </div>
+function renderScores() {
+  muteBtn.innerHTML = muted ? '&#10005;' : '&#9835;';
+  muteBtn.setAttribute('aria-label', muted ? 'Unmute' : 'Mute');
+}
 
-    <script>
-        // --- 1. SETUP ---
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreElement = document.getElementById('score');
-        const gameOverMessage = document.getElementById('game-over-message');
-        const highScoreList = document.getElementById('high-score-list'); // For high scores
+// ---------- 3. SOUND (generated in code, no audio files) ----------
+let actx = null;
+function tone(f1, f2, dur, type = 'square', vol = 0.06) {
+  if (muted) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  } catch (e) {}
+}
+const sfx = {
+  jump: () => tone(420, 760, 0.12),
+  land: () => tone(160, 90, 0.06, 'triangle', 0.05),
+  milestone: () => { tone(660, 0, 0.08); setTimeout(() => tone(990, 0, 0.14), 90); },
+  crash: () => tone(320, 50, 0.45, 'sawtooth', 0.08)
+};
 
-        // Set the internal drawing resolution of the canvas
-        canvas.width = 600;
-        canvas.height = 300;
+// ---------- 4. CONSTANTS ----------
+const R = 15;              // player radius
+const GRAV = 0.8;
+const JUMP = 10.5;         // launch velocity
+const HOLD_MAX = 14;       // ticks the jump can be extended by holding
+const HOLD_GRAV = 0.35;    // gravity multiplier while holding (lets the ball keep rising)
+const MIN_HOLD = 5;        // even the quickest tap gets a small hop
+const CUT = -3;            // upward speed is cut to this when you let go
+const MAX_SPEED = 12;
+const STEP = 1000 / 60;    // fixed physics step: same speed on 60/120/144 Hz screens
+const AIR = 40;            // ticks in the air for a full (held) jump
 
-        // --- 2. GAME VARIABLES ---
-        let player, gravity, obstacles, gameSpeed, score, isGameOver, groundHeight, maxGameSpeed;
-        let lastFiveScores = []; // Store last 5 scores
+// Day / night palettes
+const hex = c => [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16));
+const DAY   = { sky1:'#bfe0ff', sky2:'#f4f9ff', hillA:'#b9d7c4', hillB:'#93c0a3', ground:'#555a61', line:'#7b818a', cloud:'#ffffff', hud:'#2c3e50' };
+const NIGHT = { sky1:'#0b1530', sky2:'#1d2a52', hillA:'#34437a', hillB:'#27325e', ground:'#2b2f3a', line:'#4a5163', cloud:'#3c4878', hud:'#e6ebf2' };
+const DAYc = {}, NIGHTc = {};
+for (const k in DAY) { DAYc[k] = hex(DAY[k]); NIGHTc[k] = hex(NIGHT[k]); }
+function palette(f) {
+  const o = {};
+  for (const k in DAYc) {
+    const a = DAYc[k], b = NIGHTc[k];
+    o[k] = 'rgb(' + ((a[0] + (b[0] - a[0]) * f) | 0) + ',' + ((a[1] + (b[1] - a[1]) * f) | 0) + ',' + ((a[2] + (b[2] - a[2]) * f) | 0) + ')';
+  }
+  return o;
+}
+// Night falls every 2000 points
+function nightFactor(s) {
+  const c = s % 2000;
+  if (c < 900) return 0;
+  if (c < 1100) return (c - 900) / 200;
+  if (c < 1800) return 1;
+  return 1 - (c - 1800) / 200;
+}
 
-        // Player properties
-        const playerRadius = 15;
-        const playerColor = "#e53e3e"; // Red
-        const jumpStrength = 13;
-        
-        // Obstacle properties
-        const obstacleWidth = 20;
-        const obstacleHeight = 40;
-        
-        // --- Helper function to generate a color harmonious with the red player ---
-        function getRandomHarmoniousColor() {
-            // Player Color: Red (Hue ~ 0/360)
-            
-            // Define harmonious color ranges (HSL Hue values)
-            const ranges = [
-                // 1. Analogous (Warm: Red-Orange) - 0 to 40 degrees
-                { min: 0, max: 40 }, 
-                // 2. Analogous (Cool: Red-Violet/Magenta) - 300 to 340 degrees
-                { min: 300, max: 340 }, 
-                // 3. Complementary (Cool: Cyan/Teal) - 160 to 200 degrees
-                { min: 160, max: 200 } 
-            ];
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const hsl = (h, s, l) => 'hsl(' + h + ',' + s + '%,' + clamp(l, 0, 100) + '%)';
 
-            // Pick a random range to ensure variety
-            const range = ranges[Math.floor(Math.random() * ranges.length)];
-            
-            // Generate hue within the selected range
-            let hue = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-            
-            // Use high saturation and medium lightness for vibrancy/radiance
-            const saturation = Math.floor(Math.random() * (100 - 80 + 1)) + 80; // 80-100% saturation
-            const lightness = Math.floor(Math.random() * (60 - 45 + 1)) + 45; // 45-60% lightness
-            
-            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-        }
+// Obstacle colors harmonious with the red player (from v2.0)
+function randColor() {
+  const ranges = [[0, 40], [300, 340], [160, 200]];
+  const r = ranges[(Math.random() * ranges.length) | 0];
+  return { h: Math.round(rand(r[0], r[1])), s: Math.round(rand(80, 100)), l: Math.round(rand(45, 60)) };
+}
 
-        // --- 3. GAME OBJECTS & DRAWING ---
+// Player gradient built once (local coords; player drawn around (0,-R))
+const playerGrad = ctx.createRadialGradient(-R / 3, -R - R / 3, R / 10, 0, -R, R);
+playerGrad.addColorStop(0, '#f87171');
+playerGrad.addColorStop(0.8, '#e53e3e');
+playerGrad.addColorStop(1, '#991b1b');
 
-        // Player Object
-        function createPlayer() {
-            return {
-                x: 50, // Center of the circle
-                y: canvas.height - groundHeight - playerRadius, // Center of the circle
-                radius: playerRadius,
-                dy: 0, // dy is the 'delta y', or vertical velocity
-                isJumping: false,
-                grounded: true
-            };
-        }
+let stars = [];
 
-        function drawPlayer(player) {
-            ctx.beginPath();
-            
-            // Create a radial gradient for 3D effect
-            // (cx, cy, r_inner, cx, cy, r_outer)
-            let gradient = ctx.createRadialGradient(
-                player.x - player.radius / 3, // inner circle offset to left
-                player.y - player.radius / 3, // inner circle offset to top
-                player.radius / 10,     // inner circle radius (small)
-                player.x,               // outer circle center x
-                player.y,               // outer circle center y
-                player.radius           // outer circle radius
-            );
-            
-            // Add color stops (light red to dark red)
-            gradient.addColorStop(0, "#f87171"); // Lighter red (highlight)
-            gradient.addColorStop(0.8, playerColor); // Main red
-            gradient.addColorStop(1, "#991b1b"); // Darker red (shadow)
+// ---------- 5. STATE ----------
+let state = 'ready';        // ready | playing | paused | over
+let player, obstacles, particles, clouds;
+let speed, score, distSinceSpawn, nextGap, groundOff, hillOffA, hillOffB;
+let overAt = 0, newBest = false, shake = 0, flash = 0, tick = 0;
+let jumpHeld = false, downHeld = false, buffer = 0;
 
-            ctx.fillStyle = gradient;
-            
-            // (x, y, radius, startAngle, endAngle)
-            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.closePath();
-        }
+function reset() {
+  player = { x: PX, y: GY - R, dy: 0, grounded: true, rot: 0, squash: 0, hold: 0, holding: false };
+  obstacles = []; particles = [];
+  speed = 5; score = 0; distSinceSpawn = 0; nextGap = 260;
+  groundOff = 0; hillOffA = 0; hillOffB = 0;
+  newBest = false; shake = 0; flash = 0; buffer = 0;
+}
+function makeClouds() {
+  clouds = Array.from({ length: 5 }, (_, i) => ({ x: i * 140 + rand(0, 60), y: rand(20, 110), s: rand(0.7, 1.3) }));
+}
+reset(); makeClouds();
 
-        function updatePlayer(player) {
-            // Apply gravity
-            if (!player.grounded) {
-                player.dy += gravity;
-                player.y += player.dy;
-            }
+// ---------- 6. PLAYER ----------
+function tryJump() {
+  if (!player.grounded) return false;
+  player.dy = -JUMP; player.grounded = false; buffer = 0;
+  player.hold = 0; player.holding = true;
+  sfx.jump(); puff(player.x, GY, 6);
+  return true;
+}
 
-            // Check if player hits the ground
-            if (player.y + player.radius >= canvas.height - groundHeight) {
-                player.y = canvas.height - groundHeight - playerRadius;
-                player.dy = 0;
-                player.isJumping = false;
-                player.grounded = true;
-            }
-        }
+function updatePlayer() {
+  const p = player;
+  if (!p.grounded) {
+    // Hold to jump higher: while the button is held, gravity is weaker so the ball keeps rising
+    let g = GRAV;
+    if (downHeld) g = GRAV * 2.4;
+    else if (p.holding && jumpHeld && p.hold < HOLD_MAX && p.dy < 0) g = GRAV * HOLD_GRAV;
+    p.dy += g;
+    p.y += p.dy;
+    p.hold++;
+    if (p.holding && (!jumpHeld || downHeld) && p.hold >= MIN_HOLD) {
+      p.holding = false;
+      if (p.dy < CUT) p.dy = CUT;          // let go early = lower jump
+    }
+    if (p.hold >= HOLD_MAX) p.holding = false;
+    if (p.y + R >= GY) {
+      const impact = p.dy;
+      p.y = GY - R; p.dy = 0; p.grounded = true;
+      if (impact > 6) { p.squash = 1; sfx.land(); puff(p.x, GY, 4); }
+      if (buffer > 0) tryJump();          // jump pressed just before landing
+    }
+  }
+  if (buffer > 0) buffer--;
+  p.rot += speed / R;
+  p.squash *= 0.8;
+}
 
-        function jump(player) {
-            // Only allow jumping if on the ground
-            if (player.grounded) {
-                player.dy = -jumpStrength;
-                player.grounded = false;
-                player.isJumping = true;
-            }
-        }
+// ---------- 7. OBSTACLES ----------
+function makeObs(x, w, h, c, kind, y) {
+  const g = ctx.createLinearGradient(0, 0, 0, h);   // cached once per obstacle
+  g.addColorStop(0, hsl(c.h, c.s, c.l + 15));
+  g.addColorStop(0.5, hsl(c.h, c.s, c.l));
+  g.addColorStop(1, hsl(c.h, c.s, c.l - 15));
+  return { x, y: y === undefined ? GY - h : y, w, h, g, kind: kind || 'block', baseY: y, ph: rand(0, 6.28) };
+}
 
-        // Ground
-        function drawGround() {
-            ctx.fillStyle = "#555";
-            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
-        }
+function spawn() {
+  const types = ['small', 'small', 'tall'];
+  if (score > 300) types.push('double');
+  if (score > 700) types.push('split', 'triple');
+  if (score > 1100) types.push('flyer', 'flyer');
+  const t = types[(Math.random() * types.length) | 0];
+  const c = randColor(), x = W + 10;
+  let span = 0;
+  const add = (dx, w, h, kind, y) => { obstacles.push(makeObs(x + dx, w, h, c, kind, y)); span = Math.max(span, dx + w); };
 
-        // --- 3.5 HIGH SCORE DISPLAY ---
-        function updateHighScoreDisplay() {
-            const listItems = highScoreList.getElementsByTagName('li');
-            for (let i = 0; i < listItems.length; i++) {
-                if (lastFiveScores[i] !== undefined) {
-                    listItems[i].textContent = lastFiveScores[i];
-                } else {
-                    listItems[i].textContent = '-';
-                }
-            }
-        }
-        
-        // --- 4. OBSTACLES & MECHANICS ---
+  switch (t) {
+    case 'small':  add(0, 18, Math.round(rand(30, 40))); break;
+    case 'tall':   add(0, 22, Math.round(rand(46, 58))); break;
+    case 'double': add(0, 18, 36); add(20, 18, 28); break;
+    case 'triple': add(0, 16, 28); add(18, 16, 40); add(36, 16, 28); break;
+    case 'split':  add(0, 15, 30); add(65, 15, 30); break;               // v2.0 split blocks
+    case 'flyer':  add(0, 34, 14, 'flyer', Math.round(rand(204, 224))); break; // stay on the ground!
+  }
+  // Fair spacing: always enough room to land and react, tighter as you score more
+  const minReact = Math.max(9, 24 - score / 250);
+  nextGap = span + speed * (AIR + rand(minReact, minReact + 38));
+  distSinceSpawn = 0;
+}
 
-        function spawnObstacle() {
-            // Use the new harmonious color generator
-            const obstacleMainColor = getRandomHarmoniousColor();
-            const newObstacle = {
-                x: canvas.width,
-                y: canvas.height - groundHeight - obstacleHeight,
-                width: obstacleWidth,
-                height: obstacleHeight,
-                color: obstacleMainColor // Store the generated color with the obstacle
-            };
-            obstacles.push(newObstacle);
-        }
+function hits(p, o) {
+  // Circle-vs-rectangle, with a slightly forgiving hitbox
+  const r = R * 0.85;
+  const tx = clamp(p.x, o.x, o.x + o.w), ty = clamp(p.y, o.y, o.y + o.h);
+  const dx = p.x - tx, dy = p.y - ty;
+  return dx * dx + dy * dy <= r * r;
+}
 
-        function updateObstacles() {
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.x -= gameSpeed;
+function updateObstacles() {
+  distSinceSpawn += speed;
+  if (distSinceSpawn >= nextGap) spawn();
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.x -= speed;
+    if (o.kind === 'flyer') o.y = o.baseY + Math.sin(tick * 0.08 + o.ph) * 4;
+    if (o.x + o.w < -10) { obstacles.splice(i, 1); continue; }
+    if (hits(player, o)) { gameOver(); return; }   // stop at the first hit (fixes double-scoring)
+  }
+}
 
-                // Draw the obstacle with a radiant effect
-                ctx.beginPath();
-                // Create a linear gradient for a radiant effect top-to-bottom
-                let gradient = ctx.createLinearGradient(obs.x, obs.y, obs.x, obs.y + obs.height);
-                
-                // Parse the HSL color to create lighter/darker shades
-                const [hue, saturation, lightness] = obs.color.match(/\d+/g).map(Number);
-                
-                // Add stops for the radiant effect, ensuring they don't exceed 100 or fall below 0
-                gradient.addColorStop(0, `hsl(${hue}, ${saturation}%, ${Math.min(100, lightness + 15)}%)`); // Lighter at the top
-                gradient.addColorStop(0.5, obs.color); // Main color in the middle
-                gradient.addColorStop(1, `hsl(${hue}, ${saturation}%, ${Math.max(0, lightness - 15)}%)`); // Darker at the bottom
+// ---------- 8. PARTICLES ----------
+function puff(x, y, n) {
+  for (let i = 0; i < n; i++) particles.push({ x, y, vx: rand(-2, 0.5), vy: rand(-2, -0.3), life: rand(14, 24), max: 24, s: rand(2, 4), c: 'rgba(200,200,200,' });
+}
+function burst(x, y) {
+  for (let i = 0; i < 26; i++) particles.push({ x, y, vx: rand(-4, 4), vy: rand(-6, 1), life: rand(30, 50), max: 50, s: rand(2, 5), c: 'rgba(229,62,62,', g: true });
+}
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const q = particles[i];
+    q.x += q.vx; q.y += q.vy; q.vy += q.g ? 0.25 : 0.05;
+    if (q.y > GY) { q.y = GY; q.vy *= -0.4; q.vx *= 0.7; }
+    if (--q.life <= 0) particles.splice(i, 1);
+  }
+  if (particles.length > 150) particles.splice(0, particles.length - 150);
+}
 
-                ctx.fillStyle = gradient;
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-                ctx.closePath();
+// ---------- 9. GAME FLOW ----------
+function update() {
+  tick++;
+  speed = Math.min(MAX_SPEED, 5 + score * 0.0025);
+  updatePlayer();
+  groundOff = (groundOff + speed) % 40;
+  hillOffA += speed * 0.15; hillOffB += speed * 0.4;
+  for (const c of clouds) { c.x -= speed * 0.12 * c.s; if (c.x < -90) { c.x = W + rand(10, 80); c.y = rand(20, 110); } }
+  updateObstacles();
+  if (state !== 'playing') return;
+  updateParticles();
+  score++;
+  if (score % 500 === 0) { sfx.milestone(); flash = 60; }
+  if (flash > 0) flash--;
+}
 
-                // Check for collision
-                if (checkCollision(player, obs)) {
-                    isGameOver = true;
-                    gameOverMessage.style.display = 'block';
+function ambient() {               // runs when not playing (ready / game over)
+  tick++;
+  for (const c of clouds) { c.x -= 0.25 * c.s; if (c.x < -90) c.x = W + rand(10, 80); }
+  updateParticles();
+  if (shake > 0) shake *= 0.85;
+  if (shake < 0.3) shake = 0;
+}
 
-                    // Add score to list and update display
-                    lastFiveScores.unshift(score); // Add to the beginning
-                    if (lastFiveScores.length > 5) {
-                        lastFiveScores.pop(); // Remove the oldest score
-                    }
-                    updateHighScoreDisplay();
-                }
+function start() { reset(); state = 'playing'; acc = 0; keepAwake(); }
 
-                // Remove obstacle if it's off-screen
-                if (obs.x + obs.width < 0) {
-                    obstacles.splice(i, 1);
-                }
-            }
-        }
+function gameOver() {
+  state = 'over'; overAt = performance.now();
+  shake = 10; sfx.crash(); burst(player.x, player.y);
+  if (!muted && navigator.vibrate) { try { navigator.vibrate(80); } catch (e) {} }
+  last5.unshift(score); last5 = last5.slice(0, 5);
+  newBest = score > best;
+  if (newBest) best = score;
+  store.set('pj_best', best); store.set('pj_last5', last5);
+  renderScores();
+}
 
-        function checkCollision(player, obstacle) {
-            // Find the closest point on the obstacle (a rect) to the center of the player (a circle)
-            let testX = player.x;
-            let testY = player.y;
+function setPaused(on) {
+  if (on && state === 'playing') state = 'paused';
+  else if (!on && state === 'paused') { state = 'playing'; lastT = performance.now(); acc = 0; }
+  pauseBtn.innerHTML = state === 'paused' ? '&#9654;' : '&#10074;&#10074;';
+  pauseBtn.setAttribute('aria-label', state === 'paused' ? 'Resume' : 'Pause');
+}
 
-            // Find the closest x-coordinate on the box
-            if (player.x < obstacle.x) {
-                testX = obstacle.x; // player is to the left of the box
-            } else if (player.x > obstacle.x + obstacle.width) {
-                testX = obstacle.x + obstacle.width; // player is to the right of the box
-            }
-            // if player.x is within the box's x range, testX remains player.x
+// ---------- 10. DRAWING ----------
+function hillPath(off, base, a1, a2, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.moveTo(0, GY);
+  for (let x = 0; x <= W + 12; x += 12) {
+    const t = x + off;
+    ctx.lineTo(x, base - a1 * Math.sin(t * 0.011) - a2 * Math.sin(t * 0.029 + 1.3));
+  }
+  ctx.lineTo(W + 12, GY); ctx.closePath(); ctx.fill();
+}
 
-            // Find the closest y-coordinate on the box
-            if (player.y < obstacle.y) {
-                testY = obstacle.y; // player is above the box
-            } else if (player.y > obstacle.y + obstacle.height) {
-                testY = obstacle.y + obstacle.height; // player is below the box
-            }
-            // if player.y is within the box's y range, testY remains player.y
-            
-            // Calculate the distance from the circle's center to this closest point
-            const distX = player.x - testX;
-            const distY = player.y - testY;
-            const distance = Math.sqrt((distX * distX) + (distY * distY));
+function drawPlayer(p) {
+  const h = clamp((GY - R - p.y) / 120, 0, 1);
+  ctx.fillStyle = 'rgba(0,0,0,' + (0.22 * (1 - h * 0.7)) + ')';
+  ctx.beginPath(); ctx.ellipse(p.x, GY + 2, R * (1 - h * 0.5), 3, 0, 0, Math.PI * 2); ctx.fill();
 
-            // If the distance is less than the circle's radius, there's a collision
-            return distance <= player.radius;
-        }
+  let sx = 1 + p.squash * 0.25, sy = 1 - p.squash * 0.25;
+  if (!p.grounded) { sy = 1 + Math.min(0.15, Math.abs(p.dy) * 0.012); sx = 1 / sy; }
+  ctx.save();
+  ctx.translate(p.x, p.y + R); ctx.scale(sx, sy);
+  ctx.fillStyle = playerGrad;
+  ctx.beginPath(); ctx.arc(0, -R, R, 0, Math.PI * 2); ctx.fill();
+  ctx.translate(0, -R); ctx.rotate(p.rot);
+  ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(0, 0, R * 0.62, -0.9, 0.9); ctx.stroke();
+  ctx.restore();
+}
 
-        // --- 5. GAME INITIALIZATION & LOOP ---
-        let obstacleTimer = 0;
-        let obstacleSpawnInterval = 100; // Initial spawn interval
+function drawObstacle(o) {
+  ctx.save(); ctx.translate(o.x, o.y); ctx.fillStyle = o.g;
+  if (o.kind === 'flyer') {
+    const flap = Math.sin(tick * 0.4 + o.ph) * 6;
+    ctx.beginPath(); ctx.ellipse(o.w / 2, o.h / 2, o.w / 2, o.h / 2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(8, o.h / 2); ctx.lineTo(16, -4 + flap); ctx.lineTo(22, o.h / 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(6, o.h / 2 - 1, 2.2, 0, Math.PI * 2); ctx.fill();
+  } else {
+    ctx.fillRect(0, 0, o.w, o.h);
+    ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(0, 0, o.w, 3);
+    ctx.fillStyle = 'rgba(0,0,0,.12)'; ctx.fillRect(o.w - 3, 0, 3, o.h);
+  }
+  ctx.restore();
+}
 
-        function resetGame() {
-            groundHeight = 20;
-            player = createPlayer();
-            gravity = 0.8;
-            obstacles = [];
-            gameSpeed = 5;
-            maxGameSpeed = 10; // Set the maximum speed
-            score = 0;
-            isGameOver = false;
-            obstacleTimer = 0;
-            obstacleSpawnInterval = 100;
-            
-            scoreElement.textContent = '0';
-            gameOverMessage.style.display = 'none';
+// Message box; scales up on small/tall screens so the text stays readable
+function panel(lines, night) {
+  const pw = 340, ph = 30 + lines.length * 24;
+  const s = Math.min(Math.max(1, UNIT * 1.05), (W - 20) / pw);
+  const cy = H / 2 - 10 - (s - 1) * 80;
+  ctx.save();
+  ctx.translate(W / 2, cy); ctx.scale(s, s);
+  ctx.fillStyle = night ? 'rgba(18,24,40,.86)' : 'rgba(255,255,255,.9)';
+  ctx.fillRect(-pw / 2, -ph / 2, pw, ph);
+  ctx.textAlign = 'center';
+  lines.forEach((l, i) => {
+    ctx.font = (l.big ? '700 24px ' : (l.bold ? '700 15px ' : (l.small ? '13px ' : '15px '))) + 'system-ui,Segoe UI,Arial,sans-serif';
+    ctx.fillStyle = l.color || (night ? '#e6ebf2' : '#2c3e50');
+    ctx.fillText(l.t, 0, -ph / 2 + 30 + i * 24 + (l.big ? 0 : 3));
+  });
+  ctx.restore();
+}
 
-            updateHighScoreDisplay(); // Update score display on reset
+const pad = n => String(n).padStart(5, '0');
+const lastLine = () => last5.length ? { t: 'Last: ' + last5.join('  ·  '), small: true } : null;
+const portrait = () => isTouch && window.innerHeight > window.innerWidth;
 
-            // Start the game loop
-            gameLoop();
-        }
+function draw() {
+  const nf = nightFactor(score);
+  const pal = palette(nf);
+  ctx.setTransform(K, 0, 0, K, 0, OFFY * K);
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
 
-        function gameLoop() {
-            // If game is over, stop the loop
-            if (isGameOver) {
-                return;
-            }
+  // sky (fills the whole screen, including the extra area on tall screens)
+  const sky = ctx.createLinearGradient(0, -OFFY, 0, GY);
+  sky.addColorStop(0, pal.sky1); sky.addColorStop(1, pal.sky2);
+  ctx.fillStyle = sky; ctx.fillRect(-10, -OFFY - 10, W + 20, VH + 20);
 
-            // Clear the canvas for the new frame
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // stars + moon / sun
+  const sunX = W - 170 - inset.r, sunY = 60 - OFFY * 0.55;   // on tall screens the sky objects move up
+  if (nf > 0.01) {
+    ctx.fillStyle = 'rgba(255,255,255,' + nf + ')';
+    for (const s of stars) { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = 'rgba(245,240,215,' + nf + ')';
+    ctx.beginPath(); ctx.arc(sunX, sunY, 16, 0, Math.PI * 2); ctx.fill();
+  }
+  if (nf < 0.99) {
+    ctx.fillStyle = 'rgba(255,214,102,' + (1 - nf) + ')';
+    ctx.beginPath(); ctx.arc(sunX, sunY, 20, 0, Math.PI * 2); ctx.fill();
+  }
 
-            // Draw the ground
-            drawGround();
+  ctx.fillStyle = pal.cloud;
+  ctx.save(); ctx.translate(0, -OFFY * 0.55);
+  for (const c of clouds) {
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, 28 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
+    ctx.ellipse(c.x + 18 * c.s, c.y - 7 * c.s, 18 * c.s, 10 * c.s, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
 
-            // Update and draw the player
-            updatePlayer(player);
-            drawPlayer(player);
+  hillPath(hillOffA, GY - 45, 20, 10, pal.hillA);
+  hillPath(hillOffB, GY - 18, 12, 8, pal.hillB);
 
-            // Handle obstacles
-            obstacleTimer++;
-            if (obstacleTimer >= obstacleSpawnInterval) {
-                spawnObstacle();
-                obstacleTimer = 0;
-                // Randomize next spawn time to make it challenging
-                obstacleSpawnInterval = Math.floor(Math.random() * (120 - 70 + 1)) + 70;
-                // Gradually increase speed up to the max
-                if (gameSpeed < maxGameSpeed) {
-                    gameSpeed += 0.1;
-                }
-            }
-            updateObstacles();
+  // ground (extends to the bottom of the screen)
+  const bottom = VH - OFFY + 10;
+  ctx.fillStyle = pal.ground; ctx.fillRect(-10, GY, W + 20, bottom - GY);
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(-10, GY + GROUND, W + 20, bottom - GY - GROUND);
+  ctx.fillStyle = pal.line;
+  for (let x = -groundOff; x < W; x += 40) { ctx.fillRect(x, GY + 6, 14, 2); ctx.fillRect(x + 24, GY + 13, 6, 2); }
 
-            // Update score
-            score++;
-            scoreElement.textContent = score;
+  for (const o of obstacles) drawObstacle(o);
+  if (state !== 'over') drawPlayer(player);
 
-            // Request the next frame
-            requestAnimationFrame(gameLoop);
-        }
+  for (const q of particles) {
+    ctx.fillStyle = q.c + (q.life / q.max).toFixed(2) + ')';
+    ctx.fillRect(q.x, q.y, q.s, q.s);
+  }
 
-        // --- 6. EVENT LISTENERS ---
+  // HUD (top-left of the screen, clear of the notch)
+  const fs = Math.max(16, 15 * UNIT);
+  ctx.font = '700 ' + fs.toFixed(1) + 'px ui-monospace,Consolas,Menlo,monospace';
+  ctx.fillStyle = pal.hud;
+  const blink = flash > 0 && ((flash / 8) | 0) % 2 === 0;
+  ctx.fillText('HI ' + pad(best) + '   ' + (blink ? '' : pad(score)), 14 + inset.l, -OFFY + inset.t + 14 + fs);
 
-        function handleInput() {
-            if (isGameOver) {
-                resetGame();
-            } else {
-                jump(player);
-            }
-        }
+  // overlays
+  const tap = isTouch ? 'Tap' : 'Click or press Space';
+  const night = nf > 0.5;
+  if (state === 'ready') {
+    const lines = [{ t: 'PIXEL JUMPER', big: true },
+      { t: needFS() ? 'Tap to go full screen' : tap + ' to start', bold: true },
+      { t: 'Hold to jump higher · ' + (isTouch ? 'swipe down to drop' : '↓ drops fast') }];
+    if (best > 0) lines.push({ t: 'Best ' + best });
+    const ll = lastLine(); if (ll) lines.push(ll);
+    if (portrait()) lines.push({ t: 'Turn your phone sideways for a wider view', small: true, color: '#d69e2e' });
+    panel(lines, night);
+  } else if (state === 'paused') {
+    panel([{ t: 'Paused', big: true }, { t: (isTouch ? 'Tap' : 'Click or press P') + ' to resume' }], night);
+  } else if (state === 'over') {
+    const lines = [{ t: 'Game Over!', big: true, color: '#e53e3e' }, { t: 'Score ' + score + '   ·   Best ' + best, bold: true }];
+    if (newBest) lines.push({ t: 'NEW BEST!', bold: true, color: '#d69e2e' });
+    const ll = lastLine(); if (ll) lines.push(ll);
+    lines.push({ t: performance.now() - overAt > 450 ? tap + ' to retry' : ' ' });
+    panel(lines, night);
+  }
+  ctx.restore();
+}
 
-        // Listen for keyboard input (Space bar)
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault(); // Prevent page from scrolling
-                handleInput();
-            }
-        });
+// ---------- 11. MAIN LOOP (fixed timestep) ----------
+let acc = 0, lastT = performance.now();
+function frame(now) {
+  let dt = now - lastT; lastT = now;
+  if (dt > 250) dt = 250;
+  if (state !== 'paused') {
+    acc += dt;
+    let n = 0;
+    while (acc >= STEP && n++ < 10) {
+      if (state === 'playing') update(); else ambient();
+      acc -= STEP;
+    }
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
 
-        // Listen for touch input (for mobile)
-        window.addEventListener('touchstart', (e) => {
-            e.preventDefault(); // Prevent screen from scrolling or zooming
-            handleInput();
-        });
-        
-        // Listen for mouse click (for desktop)
-        window.addEventListener('mousedown', () => {
-            handleInput();
-        });
+// ---------- 12. FULL SCREEN ----------
+const root = document.documentElement;
+const canFS = !!(root.requestFullscreen || root.webkitRequestFullscreen);
+const isFS = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+let fsTried = false, pendingFS = false;
+const needFS = () => isTouch && canFS && !isFS() && !fsTried;
 
-        // --- 7. START THE GAME ---
-        resetGame();
+function enterFS() {
+  try {
+    const p = root.requestFullscreen ? root.requestFullscreen({ navigationUI: 'hide' }) : root.webkitRequestFullscreen();
+    Promise.resolve(p).then(() => {
+      // Android: turn to landscape automatically (ignored where not supported)
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    }).catch(() => {});
+  } catch (e) {}
+}
+function exitFS() {
+  try { (document.exitFullscreen || document.webkitExitFullscreen).call(document); } catch (e) {}
+}
+function updateFsBtn() {
+  fsBtn.hidden = !canFS;
+  fsBtn.innerHTML = isFS() ? '&#x2715;' : '&#x26F6;';
+  fsBtn.title = isFS() ? 'Exit full screen' : 'Full screen';
+  fsBtn.setAttribute('aria-label', fsBtn.title);
+}
+document.addEventListener('fullscreenchange', () => { updateFsBtn(); fit(); });
+document.addEventListener('webkitfullscreenchange', () => { updateFsBtn(); fit(); });
 
-    </script>
+// Keep the screen awake while playing (where supported)
+let wake = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !wake) { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) {}
+}
+
+// ---------- 13. INPUT ----------
+function press() {
+  jumpHeld = true;
+  if (state === 'ready') { start(); tryJump(); }
+  else if (state === 'playing') { if (!tryJump()) buffer = 7; }
+  else if (state === 'paused') setPaused(false);
+  else if (state === 'over' && performance.now() - overAt > 450) start();
+}
+function release() { jumpHeld = false; }
+
+const JUMP_KEYS = ['Space', 'ArrowUp', 'KeyW', 'Enter'];
+const DOWN_KEYS = ['ArrowDown', 'KeyS'];
+window.addEventListener('keydown', e => {
+  if (JUMP_KEYS.includes(e.code)) { e.preventDefault(); if (!e.repeat) press(); }
+  else if (DOWN_KEYS.includes(e.code)) { e.preventDefault(); downHeld = true; buffer = 0; }
+  else if (e.code === 'KeyP' || e.code === 'Escape') setPaused(state === 'playing');
+  else if (e.code === 'KeyM') toggleMute();
+  else if (e.code === 'KeyF' && canFS) isFS() ? exitFS() : enterFS();
+});
+window.addEventListener('keyup', e => {
+  if (JUMP_KEYS.includes(e.code)) release();
+  else if (DOWN_KEYS.includes(e.code)) downHeld = false;
+});
+
+// Touch / mouse / pen. Several fingers are tracked, so lifting one doesn't cut a jump short.
+const pointers = new Map();     // pointerId -> start Y (CSS px)
+let swipeDown = false;
+document.addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  if (e.pointerType === 'mouse' && e.button > 0) return;
+  e.preventDefault();
+  if (e.pointerType !== 'mouse' && state === 'ready' && needFS()) { pendingFS = true; return; }
+  pointers.set(e.pointerId, e.clientY);
+  press();
+}, { passive: false });
+document.addEventListener('pointermove', e => {
+  if (!pointers.has(e.pointerId)) return;
+  // Swipe down = drop fast (mobile version of the ↓ key)
+  if (state === 'playing' && e.clientY - pointers.get(e.pointerId) > 30) { swipeDown = true; downHeld = true; buffer = 0; }
+});
+function pointerEnd(e) {
+  if (pendingFS) { pendingFS = false; fsTried = true; enterFS(); return; }   // browsers only allow full screen on finger-up
+  pointers.delete(e.pointerId);
+  if (pointers.size === 0) {
+    release();
+    if (swipeDown) { swipeDown = false; downHeld = false; }
+  }
+}
+document.addEventListener('pointerup', pointerEnd);
+document.addEventListener('pointercancel', pointerEnd);
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('gesturestart', e => e.preventDefault());   // iOS pinch-zoom
+document.addEventListener('dblclick', e => e.preventDefault());
+
+pauseBtn.addEventListener('click', e => { e.stopPropagation(); setPaused(state === 'playing'); pauseBtn.blur(); });
+muteBtn.addEventListener('click', e => { e.stopPropagation(); toggleMute(); muteBtn.blur(); });
+fsBtn.addEventListener('click', e => { e.stopPropagation(); fsTried = true; isFS() ? exitFS() : enterFS(); fsBtn.blur(); });
+function toggleMute() { muted = !muted; store.set('pj_muted', muted); renderScores(); }
+
+// Auto-pause when the app goes to the background
+document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
+window.addEventListener('resize', fit);
+window.addEventListener('orientationchange', () => setTimeout(fit, 250));
+if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+
+// ---------- 14. GO ----------
+fit();
+updateFsBtn();
+renderScores();
+requestAnimationFrame(t => { lastT = t; frame(t); });
+})();
+</script>
 </body>
 </html>
