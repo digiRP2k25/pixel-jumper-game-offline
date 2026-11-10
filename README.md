@@ -1,17 +1,32 @@
+<div align="center">
+
+<img src="docs/demo.gif" alt="Pixel Jumper gameplay: the red ball jumps over blocks as day turns to night" width="640">
+
 # Pixel Jumper
 
-A lightweight endless-runner game inspired by the offline "dino" game, built as **one HTML file** with no downloads, no libraries, and no internet needed.
+**A tiny endless-runner game in one HTML file. Plays offline on PC and Android, and goes full screen on phones.**
 
-Jump over blocks, dodge flying obstacles, and survive as day turns to night. The game gets faster as your score climbs.
+<a href="https://digiRP2k25.github.io/pixel-jumper-game-offline/"><img src="https://img.shields.io/badge/PLAY%20NOW-in%20your%20browser-e53e3e?style=for-the-badge" alt="Play now"></a>
+<a href="https://github.com/digiRP2k25/pixel-jumper-game-offline/releases/latest"><img src="https://img.shields.io/github/v/release/digiRP2k25/pixel-jumper-game-offline?style=for-the-badge&label=Download&color=2c5282" alt="Download latest release"></a>
 
-**▶ Play online:** https://digiRP2k25.github.io/pixel-jumper-game-offline/
-**⬇ Download:** [latest release](https://github.com/digiRP2k25/pixel-jumper-game-offline/releases/latest) (one file, ~27 KB)
+<img src="https://img.shields.io/badge/works-offline-2ea44f" alt="Works offline">
+<img src="https://img.shields.io/badge/mobile-full%20screen-8250df" alt="Mobile full screen">
+<img src="https://img.shields.io/badge/size-27%20KB-blue" alt="Size 27 KB">
+<img src="https://img.shields.io/badge/dependencies-none-success" alt="No dependencies">
+<img src="https://img.shields.io/github/license/digiRP2k25/pixel-jumper-game-offline" alt="MIT license">
+<img src="https://img.shields.io/github/stars/digiRP2k25/pixel-jumper-game-offline?style=social" alt="GitHub stars">
 
-![Gameplay](docs/screenshots/gameplay-day.png)
+</div>
 
-| Night mode | Game over |
-|---|---|
-| ![Night](docs/screenshots/gameplay-night.png) | ![Game over](docs/screenshots/game-over.png) |
+Jump over blocks, dodge flying obstacles, and survive as day turns to night. A tap gives a small hop, holding gives a big jump, and the game gets faster as your score climbs.
+
+No install, no sign-up, no ads, and no internet needed once you have the file.
+
+| On your phone? Scan to play | Night mode | Game over |
+|:---:|:---:|:---:|
+| <img src="docs/qr-play.png" alt="QR code linking to the play-online page" width="160"> | <img src="docs/screenshots/gameplay-night.png" alt="Night mode" width="300"> | <img src="docs/screenshots/game-over.png" alt="Game over screen" width="300"> |
+
+> ⭐ **Enjoyed it?** Star the repo so others can find it. Ideas, bugs or a high score to brag about? [Open an issue](https://github.com/digiRP2k25/pixel-jumper-game-offline/issues/new).
 
 ---
 
@@ -71,7 +86,10 @@ pixel-jumper-game-offline/
 ├── CHANGELOG.md
 ├── LICENSE
 └── docs/
-    └── screenshots/    ← images used in this README
+    ├── demo.gif            ← animated gameplay at the top of this README
+    ├── qr-play.png         ← QR code to the play-online page
+    ├── social-preview.png  ← image shown when the repo link is shared
+    └── screenshots/        ← still images used in this README
 ```
 
 ## Customizing
@@ -87,6 +105,12 @@ All the tuning values are near the top of the `<script>` in `index.html`, in the
 | `R` | Ball size (radius) | `15` |
 
 Obstacle types and when they appear are in the `spawn()` function. The day and night colors are in the `DAY` and `NIGHT` palettes.
+
+## Troubleshooting
+
+- **No sound?** Check the mute button at the top-right. If it shows **✕**, click it or press **M**. The mute setting is remembered, and on a PC every game file you open from your disk shares it, so mute from an earlier session carries over.
+- **No full screen on iPhone?** Safari doesn't let web pages hide the address bar. Turn the phone sideways for the biggest view.
+- **Scores disappeared?** Scores are saved in your browser. Clearing browsing data or using private/incognito mode resets them.
 
 ## License
 
